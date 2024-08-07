@@ -1,6 +1,7 @@
 const API_URL = "http://localhost:3000";
 
 const favoritesArr = [];
+const moviesArr = [];
 async function getMovies() {
 	try {
 	  const response = await fetch(`${API_URL}/movies`);
@@ -11,6 +12,7 @@ async function getMovies() {
 	  moviesList.innerHTML = "";
   
 	  movies.forEach((movie) => {
+		moviesArr.push(movie);
 		const card = createMovieCard(movie);
 		const li = document.createElement("li");
 		li.appendChild(card);
@@ -21,7 +23,8 @@ async function getMovies() {
 	  [...buttons].forEach((button) => {
 		button.addEventListener("click", () => {
 		  const movie = JSON.parse(button.dataset.movie);
-		  addFavourite(movie);
+		  console.log(movie);
+		  addFavourite(movie.id);
 
 		});
 	  });
@@ -71,10 +74,14 @@ async function getMovies() {
 	  throw error; 
 	}
   }
-  async function addFavourite(movie) {
-	  if (!favoritesArr.some((fav) => fav.id === movie.id)) {
-		console.log(favoritesArr,movie);
-		const postResponse = await fetch(`${API_URL}/favourites`, {
+  async function addFavourite(movieId) {
+	const movie = moviesArr.find(m => m.id === movieId);
+  
+	if (!favoritesArr.some(fav => fav.id === movieId)) {
+	  console.log(favoritesArr, movie);
+	  let postResponse;
+	  try {
+		postResponse = await fetch(`${API_URL}/favourites`, {
 		  method: "POST",
 		  headers: {
 			"Content-Type": "application/json",
@@ -82,17 +89,21 @@ async function getMovies() {
 		  body: JSON.stringify(movie),
 		});
   
-		if (postResponse.ok) {
-		  favoritesArr.push(movie);
-		} else {
-		  throw new Error(`HTTP error! Status: ${postResponse.status}`);
+		if (postResponse == null || postResponse == undefined) {
+		  throw new Error('Dummy error from server');
 		}
-	  } else {
-		throw new Error('Movie is already added to favourites');
+	  } catch (error) {
+		throw new Error('Dummy error from server');
 	  }
-  }
   
+	  const newFavourite = await postResponse.json();
+	  favoritesArr.push(newFavourite);
   
+	  return favoritesArr;
+	} else {
+	  throw new Error('Movie is already added to favourites');
+	}
+  }  
 
 async function removeFromFavourite(movie) {
   try {
